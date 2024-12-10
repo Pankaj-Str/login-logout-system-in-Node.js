@@ -1,23 +1,13 @@
-app.get('/login', (req, res) => {
-    res.render('login');
-});
-
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    const user = users.find(u => u.username === username);
-    if (!user) {
-        req.flash('error_msg', 'User does not exist');
-        return res.redirect('/login');
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        req.flash('error_msg', 'Invalid credentials');
-        return res.redirect('/login');
-    }
-
-    req.session.isAuthenticated = true;
-    req.flash('success_msg', 'Logged in successfully');
-    res.redirect('/dashboard');
-});
+<h2>Login</h2>
+<% if (error_msg) { %>
+  <p style="color: red;"><%= error_msg %></p>
+<% } %>
+<% if (success_msg) { %>
+  <p style="color: green;"><%= success_msg %></p>
+<% } %>
+<form action="/login" method="POST">
+    <input type="text" name="username" placeholder="Username" required /><br>
+    <input type="password" name="password" placeholder="Password" required /><br>
+    <button type="submit">Login</button>
+</form>
+<a href="/register">Don't have an account? Register</a>
