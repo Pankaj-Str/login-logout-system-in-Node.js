@@ -1,220 +1,205 @@
-# login/logout system in Node.js
-
-Creating a login/logout system in Node.js involves using essential libraries like **Express**, **bcryptjs** (for password hashing), and **Express-Session** or **JWT** (for session or token management). Below is a step-by-step guide to build a simple login/logout system using Node.js.
+#  **login and logout system using Node.js**:
 
 ---
 
-### Step 1: Initialize the Project
-1. **Create a new project**:
+### **1. Set Up the Project**
+
+1. **Initialize the Project**:
    ```bash
-   mkdir login-system
-   cd login-system
+   mkdir login-logout-system
+   cd login-logout-system
    npm init -y
    ```
-2. **Install dependencies**:
+   This will create a `package.json` file.
+
+2. **Install Dependencies**:
    ```bash
-   npm install express body-parser bcryptjs express-session ejs mongoose
+   npm install express body-parser bcryptjs express-session connect-flash ejs
+   ```
+   - **express**: Web framework.
+   - **body-parser**: Parses request bodies.
+   - **bcryptjs**: Hash passwords for security.
+   - **express-session**: Manages sessions.
+   - **connect-flash**: Displays flash messages.
+   - **ejs**: Template engine for rendering views.
+
+3. **Create a Basic Project Structure**:
+   ```
+   login-logout-system/
+   ├── views/
+   │   ├── login.ejs
+   │   ├── register.ejs
+   │   └── dashboard.ejs
+   ├── public/
+   │   └── css/
+   ├── app.js
+   └── package.json
    ```
 
 ---
 
-### Step 2: Set Up the Project Structure
-Create the following structure:
-```
-login-system/
-│
-├── server.js
-├── models/
-│   └── User.js
-├── views/
-│   ├── login.ejs
-│   ├── register.ejs
-│   └── dashboard.ejs
-└── public/
-    └── styles.css
-```
+### **2. Build the Backend**
 
----
+1. **Set Up Express App (`app.js`)**:
+   ```javascript
+   const express = require('express');
+   const bodyParser = require('body-parser');
+   const bcrypt = require('bcryptjs');
+   const session = require('express-session');
+   const flash = require('connect-flash');
 
-### Step 3: Set Up the Server
-Create the `server.js` file to handle the Express server.
+   const app = express();
 
-```javascript
-const express = require('express');
-const bodyParser = require('body-parser');
-const session = require('express-session');
-const mongoose = require('mongoose');
+   // Middleware
+   app.use(bodyParser.urlencoded({ extended: false }));
+   app.use(express.static('public'));
+   app.set('view engine', 'ejs');
+   app.use(
+       session({
+           secret: 'secret',
+           resave: true,
+           saveUninitialized: true,
+       })
+   );
+   app.use(flash());
 
-const app = express();
+   // Global Variables for Flash Messages
+   app.use((req, res, next) => {
+       res.locals.success_msg = req.flash('success_msg');
+       res.locals.error_msg = req.flash('error_msg');
+       next();
+   });
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
-app.set('view engine', 'ejs');
-
-// Session setup
-app.use(session({
-    secret: 'secret_key',
-    resave: false,
-    saveUninitialized: true
-}));
-
-// Connect to MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/loginSystemDB', { useNewUrlParser: true, useUnifiedTopology: true });
-
-// Routes
-app.use('/', require('./routes/auth'));
-
-// Start server
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
-```
-
----
-
-### Step 4: Create the User Model
-Create a `models/User.js` file for storing user data.
-
-```javascript
-const mongoose = require('mongoose');
-
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-});
-
-module.exports = mongoose.model('User', userSchema);
-```
-
----
-
-### Step 5: Create Authentication Routes
-Create a `routes/auth.js` file for login, register, and logout routes.
-
-```javascript
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const router = express.Router();
-
-// Register Route
-router.get('/register', (req, res) => {
-    res.render('register');
-});
-
-router.post('/register', async (req, res) => {
-    try {
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const user = new User({ username: req.body.username, password: hashedPassword });
-        await user.save();
-        res.redirect('/login');
-    } catch (err) {
-        res.status(500).send('Error registering user');
-    }
-});
-
-// Login Route
-router.get('/login', (req, res) => {
-    res.render('login');
-});
-
-router.post('/login', async (req, res) => {
-    const user = await User.findOne({ username: req.body.username });
-    if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
-        return res.render('login', { error: 'Invalid credentials' });
-    }
-    req.session.userId = user._id;
-    res.redirect('/dashboard');
-});
-
-// Dashboard Route (Protected)
-router.get('/dashboard', (req, res) => {
-    if (!req.session.userId) return res.redirect('/login');
-    res.render('dashboard');
-});
-
-// Logout Route
-router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
-});
-
-module.exports = router;
-```
-
----
-
-### Step 6: Create Views
-Create `views/register.ejs`, `views/login.ejs`, and `views/dashboard.ejs`.
-
-#### register.ejs:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-</head>
-<body>
-    <h1>Register</h1>
-    <form action="/register" method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Register</button>
-    </form>
-    <a href="/login">Already have an account? Login</a>
-</body>
-</html>
-```
-
-#### login.ejs:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
-    <h1>Login</h1>
-    <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-    </form>
-    <a href="/register">Don't have an account? Register</a>
-</body>
-</html>
-```
-
-#### dashboard.ejs:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard</title>
-</head>
-<body>
-    <h1>Welcome to the Dashboard</h1>
-    <a href="/logout">Logout</a>
-</body>
-</html>
-```
-
----
-
-### Step 7: Test the Application
-1. Run the server:
-   ```bash
-   node server.js
+   const PORT = 3000;
+   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
    ```
-2. Open a browser and visit:
-   - **Register:** [http://localhost:3000/register](http://localhost:3000/register)
-   - **Login:** [http://localhost:3000/login](http://localhost:3000/login)
-   - **Dashboard:** After login.
+
+2. **Create Dummy Data for Users**:
+   (For simplicity, we'll use an in-memory object. In production, use a database.)
+   ```javascript
+   let users = [];
+   ```
 
 ---
 
-### Next Steps:
-1. **Validation:** Add input validation for username and password.
-2. **Security:** Store the session secret securely (use environment variables).
-3. **Frontend:** Add styling using CSS or a framework like Bootstrap.
-4. **Production:** Use HTTPS and secure cookies in production.
+### **3. Create Routes**
 
+1. **Registration Route**:
+   ```javascript
+   app.get('/register', (req, res) => {
+       res.render('register');
+   });
+
+   app.post('/register', async (req, res) => {
+       const { username, password, confirmPassword } = req.body;
+
+       if (password !== confirmPassword) {
+           req.flash('error_msg', 'Passwords do not match');
+           return res.redirect('/register');
+       }
+
+       // Hash password
+       const hashedPassword = await bcrypt.hash(password, 10);
+       users.push({ username, password: hashedPassword });
+
+       req.flash('success_msg', 'You are now registered');
+       res.redirect('/login');
+   });
+   ```
+
+2. **Login Route**:
+   ```javascript
+   app.get('/login', (req, res) => {
+       res.render('login');
+   });
+
+   app.post('/login', async (req, res) => {
+       const { username, password } = req.body;
+
+       const user = users.find(u => u.username === username);
+       if (!user) {
+           req.flash('error_msg', 'User does not exist');
+           return res.redirect('/login');
+       }
+
+       const isMatch = await bcrypt.compare(password, user.password);
+       if (!isMatch) {
+           req.flash('error_msg', 'Invalid credentials');
+           return res.redirect('/login');
+       }
+
+       req.session.isAuthenticated = true;
+       req.flash('success_msg', 'Logged in successfully');
+       res.redirect('/dashboard');
+   });
+   ```
+
+3. **Dashboard Route (Protected)**:
+   ```javascript
+   const isAuthenticated = (req, res, next) => {
+       if (req.session.isAuthenticated) return next();
+       req.flash('error_msg', 'Please log in to view this page');
+       res.redirect('/login');
+   };
+
+   app.get('/dashboard', isAuthenticated, (req, res) => {
+       res.render('dashboard');
+   });
+   ```
+
+4. **Logout Route**:
+   ```javascript
+   app.get('/logout', (req, res) => {
+       req.session.destroy(err => {
+           if (err) throw err;
+           res.redirect('/login');
+       });
+   });
+   ```
+
+---
+
+### **4. Create Views**
+
+1. **Register (`views/register.ejs`)**:
+   ```html
+   <form action="/register" method="POST">
+       <input type="text" name="username" placeholder="Username" required />
+       <input type="password" name="password" placeholder="Password" required />
+       <input type="password" name="confirmPassword" placeholder="Confirm Password" required />
+       <button type="submit">Register</button>
+   </form>
+   ```
+
+2. **Login (`views/login.ejs`)**:
+   ```html
+   <form action="/login" method="POST">
+       <input type="text" name="username" placeholder="Username" required />
+       <input type="password" name="password" placeholder="Password" required />
+       <button type="submit">Login</button>
+   </form>
+   ```
+
+3. **Dashboard (`views/dashboard.ejs`)**:
+   ```html
+   <h1>Welcome to the Dashboard!</h1>
+   <a href="/logout">Logout</a>
+   ```
+
+---
+
+### **5. Test the Application**
+
+1. Run the app:
+   ```bash
+   node app.js
+   ```
+
+2. Open your browser and navigate to:
+   - **Register**: `http://localhost:3000/register`
+   - **Login**: `http://localhost:3000/login`
+   - **Dashboard**: `http://localhost:3000/dashboard` (accessible only after login).
+
+---
+
+This system demonstrates a basic authentication workflow with session-based login and logout. You can enhance it by integrating a database (e.g., MongoDB) and adding advanced features like JWT authentication, user roles, and account management.

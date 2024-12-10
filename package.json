@@ -1,0 +1,20 @@
+{
+  "name": "login-logout-system-in-node",
+  "version": "1.0.0",
+  "description": "Creating a login/logout system in Node.js involves using essential libraries like **Express**, **bcryptjs** (for password hashing), and **Express-Session** or **JWT** (for session or token management). Below is a step-by-step guide to build a simple login/logout system using Node.js.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "connect-flash": "^0.1.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  }
+}

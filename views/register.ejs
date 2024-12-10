@@ -1,0 +1,19 @@
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+app.post('/register', async (req, res) => {
+    const { username, password, confirmPassword } = req.body;
+
+    if (password !== confirmPassword) {
+        req.flash('error_msg', 'Passwords do not match');
+        return res.redirect('/register');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ username, password: hashedPassword });
+
+    req.flash('success_msg', 'You are now registered');
+    res.redirect('/login');
+});

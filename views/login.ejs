@@ -1,0 +1,23 @@
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    const user = users.find(u => u.username === username);
+    if (!user) {
+        req.flash('error_msg', 'User does not exist');
+        return res.redirect('/login');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        req.flash('error_msg', 'Invalid credentials');
+        return res.redirect('/login');
+    }
+
+    req.session.isAuthenticated = true;
+    req.flash('success_msg', 'Logged in successfully');
+    res.redirect('/dashboard');
+});

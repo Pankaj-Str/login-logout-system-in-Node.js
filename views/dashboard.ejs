@@ -1,0 +1,9 @@
+const isAuthenticated = (req, res, next) => {
+    if (req.session.isAuthenticated) return next();
+    req.flash('error_msg', 'Please log in to view this page');
+    res.redirect('/login');
+};
+
+app.get('/dashboard', isAuthenticated, (req, res) => {
+    res.render('dashboard');
+});
